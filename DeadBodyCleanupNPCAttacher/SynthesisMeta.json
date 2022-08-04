@@ -2,7 +2,7 @@
   "Nickname": "DeadBodyCleanupNPCAttacher",
   "Visibility": "Visible",
   "OneLineDescription": "Add deadbodycleanupscript to some npcs",
-  "LongDescription": "Defaule unofficial patch name setfor Skyrim LE but you can change it to any in the patcher settings",
+  "LongDescription": "Default unofficial patch name set for Skyrim LE USLEEP but you can change it to USEEP or any in the patcher settings",
   "PreferredAutoVersioning": "Default",
   "RequiredMods": [],
   "TargetedReleases": []
