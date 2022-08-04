@@ -25,18 +25,13 @@ namespace DeadBodyCleanupNPCAttacher
 
         public static void RunPatch(IPatcherState<ISkyrimMod, ISkyrimModGetter> state)
         {
-
+            // check for unofficial patch in load order
             string unofficialPatchName = PatchSettings.Value.UnofficialPatchName;
-            ModKey unofficialPatchModKey = ModKey.FromNameAndExtension(unofficialPatchName);
-
-            if (!state.LoadOrder.ContainsKey(unofficialPatchModKey))
+            if (!state.LoadOrder.ContainsKey(unofficialPatchName))
             {
                 Console.WriteLine($"{unofficialPatchName} not found. Finish.");
                 return;
             }
-            var unofficialPatch1 = state.LoadOrder.TryGetValue(unofficialPatchModKey);
-
-            ModKey SkyrimModKey = ModKey.FromNameAndExtension("Skyrim.esm");
 
             // create script
             var deadBodyCleanupScript = new ScriptEntry
@@ -48,17 +43,18 @@ namespace DeadBodyCleanupNPCAttacher
             {
                 Name = "DeathContainer",
                 Flags = ScriptProperty.Flag.Edited,
-                Object = new FormLink<IContainerGetter>(SkyrimModKey.MakeFormKey(0x0172B6))
+                Object = new FormLink<IContainerGetter>(FormKey.Factory("0172B6:Skyrim.esm"))
             };
             deadBodyCleanupScript.Properties.Add(deathContainerScriptProperty);
             var wiScriptProperty = new ScriptObjectProperty
             {
                 Name = "WI",
                 Flags = ScriptProperty.Flag.Edited,
-                Object = new FormLink<IQuestGetter>(SkyrimModKey.MakeFormKey(0x035d64))
+                Object = new FormLink<IQuestGetter>(FormKey.Factory("035d64:Skyrim.esm"))
             };
             deadBodyCleanupScript.Properties.Add(wiScriptProperty);
 
+            // add script to valid npcs
             foreach (var npcGetter in state.LoadOrder.PriorityOrder.Npc().WinningOverrides())
             {
                 // skip invalid
