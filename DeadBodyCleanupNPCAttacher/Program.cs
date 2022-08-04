@@ -66,8 +66,8 @@ namespace DeadBodyCleanupNPCAttacher
                     continue;
                 }
                 if (!npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Unique)) continue; // not unique
-                if (!npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.IsCharGenFacePreset)) continue; // is chargen preset
-                if (!npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Summonable)) continue; // is summonable
+                if (npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.IsCharGenFacePreset)) continue; // is chargen preset
+                if (npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Summonable)) continue; // is summonable
                 if (npcGetter.Template != null && !npcGetter.Template.IsNull && npcGetter.Configuration.TemplateFlags.HasFlag(NpcConfiguration.TemplateFlag.Script)) continue; // has template npc and use ithis script
                 if ((npcGetter.VirtualMachineAdapter?.Scripts.Select(s => s.Name == "WIDeadBodyCleanupScript").Any()).HasValue) continue; // already have the script
 
