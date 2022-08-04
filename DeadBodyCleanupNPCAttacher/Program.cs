@@ -57,6 +57,12 @@ namespace DeadBodyCleanupNPCAttacher
                 patchedNPC.VirtualMachineAdapter.Scripts.Insert(patchedNPC.VirtualMachineAdapter.Scripts.Count, theScriptEntrieGetter.DeepCopy());
             }
 
+            if (PatchSettings.Value.OnlyScriptForward)
+            {
+                Console.WriteLine("Selected only script forward, skip add...");
+                return;
+            }
+
             // create script
             var deadBodyCleanupScript = new ScriptEntry
             {
