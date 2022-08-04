@@ -33,6 +33,7 @@ namespace DeadBodyCleanupNPCAttacher
                 return;
             }
 
+            int forwarded = 0;
             // forward unofficial patch dead body cleanup script
             ModKey unofficialPatchModKey = ModKey.FromNameAndExtension(unofficialPatchName);
             if (!state.LoadOrder.TryGetValue(unofficialPatchModKey, out IModListing<ISkyrimModGetter>? unofficialPatchModGetter) || unofficialPatchModGetter == null || unofficialPatchModGetter.Mod == null)
@@ -51,11 +52,13 @@ namespace DeadBodyCleanupNPCAttacher
                 if (lastNPCEdit.Record.VirtualMachineAdapter != null && lastNPCEdit.Record.VirtualMachineAdapter.Scripts.Any(s => string.Equals(s.Name, "wideadbodycleanupscript", StringComparison.InvariantCultureIgnoreCase))) continue; // already have the script
 
                 // add script entrie
+                forwarded++;
                 var patchedNPC = state.PatchMod.Npcs.GetOrAddAsOverride(lastNPCEdit.Record);
                 Console.WriteLine($"Forward script for npc '{patchedNPC.FormKey.ID}'({patchedNPC.EditorID}:[{patchedNPC.Name}])");
                 if (patchedNPC.VirtualMachineAdapter == null) patchedNPC.VirtualMachineAdapter = new VirtualMachineAdapter();
                 patchedNPC.VirtualMachineAdapter.Scripts.Insert(patchedNPC.VirtualMachineAdapter.Scripts.Count, theScriptEntrieGetter.DeepCopy());
             }
+            Console.WriteLine($"Worwarded script for {forwarded} npcs");
 
             if (PatchSettings.Value.OnlyScriptForward)
             {
@@ -87,6 +90,7 @@ namespace DeadBodyCleanupNPCAttacher
             var playerFormkey = FormKey.Factory("000007:Skyrim.esm");
             bool playerFound = false;
             // add script to valid npcs
+            int added = 0;
             foreach (var npcGetter in state.LoadOrder.PriorityOrder.Npc().WinningOverrides())
             {
                 // skip invalid
@@ -101,12 +105,15 @@ namespace DeadBodyCleanupNPCAttacher
                 if (npcGetter.Template != null && !npcGetter.Template.IsNull && npcGetter.Configuration.TemplateFlags.HasFlag(NpcConfiguration.TemplateFlag.Script)) continue; // has template npc and use ithis script
                 if (npcGetter.VirtualMachineAdapter != null && npcGetter.VirtualMachineAdapter.Scripts.Any(s => string.Equals(s.Name, "wideadbodycleanupscript", StringComparison.InvariantCultureIgnoreCase))) continue; // already have the script
 
+                added++;
                 var npc = state.PatchMod.Npcs.GetOrAddAsOverride(npcGetter);
                 Console.WriteLine($"Add script for npc '{npcGetter.FormKey.ID}'({npcGetter.EditorID}:[{npcGetter.Name}])");
 
                 if (npc.VirtualMachineAdapter == null) npc.VirtualMachineAdapter = new VirtualMachineAdapter();
                 npc.VirtualMachineAdapter.Scripts.Insert(npc.VirtualMachineAdapter.Scripts.Count, deadBodyCleanupScript);
             }
+
+            Console.WriteLine($"Added script for {added} npcs");
         }
     }
 }
