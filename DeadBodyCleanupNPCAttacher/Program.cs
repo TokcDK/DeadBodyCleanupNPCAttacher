@@ -54,11 +54,19 @@ namespace DeadBodyCleanupNPCAttacher
             };
             deadBodyCleanupScript.Properties.Add(wiScriptProperty);
 
+            var playerFormkey = FormKey.Factory("000007:Skyrim.esm");
+            bool playerFound = false;
             // add script to valid npcs
             foreach (var npcGetter in state.LoadOrder.PriorityOrder.Npc().WinningOverrides())
             {
                 // skip invalid
+                if (!playerFound && npcGetter.FormKey== playerFormkey)
+                {
+                    playerFound = true; // player check only while not found
+                    continue;
+                }
                 if (!npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Unique)) continue; // not unique
+                if (!npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.IsCharGenFacePreset)) continue; // is chargen preset
                 if (npcGetter.Template != null && !npcGetter.Template.IsNull && npcGetter.Configuration.TemplateFlags.HasFlag(NpcConfiguration.TemplateFlag.Script)) continue; // has template npc and use ithis script
                 if ((npcGetter.VirtualMachineAdapter?.Scripts.Select(s => s.Name == "WIDeadBodyCleanupScript").Any()).HasValue) continue; // already have the script
 
