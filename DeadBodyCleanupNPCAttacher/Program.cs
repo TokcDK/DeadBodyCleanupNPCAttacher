@@ -58,7 +58,7 @@ namespace DeadBodyCleanupNPCAttacher
                 if (patchedNPC.VirtualMachineAdapter == null) patchedNPC.VirtualMachineAdapter = new VirtualMachineAdapter();
                 patchedNPC.VirtualMachineAdapter.Scripts.Insert(patchedNPC.VirtualMachineAdapter.Scripts.Count, theScriptEntrieGetter.DeepCopy());
             }
-            Console.WriteLine($"Worwarded script for {forwarded} npcs");
+            Console.WriteLine($"Forwarded script for {forwarded} npcs");
 
             if (PatchSettings.Value.OnlyScriptForward)
             {
