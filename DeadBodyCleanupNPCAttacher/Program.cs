@@ -1,11 +1,11 @@
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Order;
 using Mutagen.Bethesda.Skyrim;
 using Mutagen.Bethesda.Synthesis;
+using Noggog;
 using System;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace DeadBodyCleanupNPCAttacher
@@ -31,6 +31,30 @@ namespace DeadBodyCleanupNPCAttacher
             {
                 Console.WriteLine($"{unofficialPatchName} not found. Finish.");
                 return;
+            }
+
+            // forward unofficial patch dead body cleanup script
+            ModKey unofficialPatchModKey = ModKey.FromNameAndExtension(unofficialPatchName);
+            if (!state.LoadOrder.TryGetValue(unofficialPatchModKey, out IModListing<ISkyrimModGetter>? unofficialPatchModGetter) || unofficialPatchModGetter == null || unofficialPatchModGetter.Mod == null)
+            {
+                Console.WriteLine($"{unofficialPatchName} not found. Finish.");
+                return;
+            }
+            foreach (var unPatchNPCGetter in unofficialPatchModGetter.Mod.Npcs)
+            {
+                if (unPatchNPCGetter == null) continue;
+                var theScriptEntrieGetter = unPatchNPCGetter.VirtualMachineAdapter?.Scripts.FirstOrDefault(s => string.Equals(s.Name, "wideadbodycleanupscript", StringComparison.InvariantCultureIgnoreCase));
+                if (theScriptEntrieGetter == null) continue; // only when has the script
+
+                var lastNPCEdit = state.LinkCache.ResolveAllContexts<INpc, INpcGetter>(unPatchNPCGetter.FormKey).First();
+                if (lastNPCEdit.ModKey == unofficialPatchModKey) continue; // unoficial patch is last edit
+                if (lastNPCEdit.Record.VirtualMachineAdapter != null && lastNPCEdit.Record.VirtualMachineAdapter.Scripts.Any(s => string.Equals(s.Name, "wideadbodycleanupscript", StringComparison.InvariantCultureIgnoreCase))) continue; // already have the script
+
+                // add script entrie
+                var patchedNPC = state.PatchMod.Npcs.GetOrAddAsOverride(lastNPCEdit.Record);
+                Console.WriteLine($"Forward script for npc '{patchedNPC.FormKey.ID}'({patchedNPC.EditorID}:[{patchedNPC.Name}])");
+                if (patchedNPC.VirtualMachineAdapter == null) patchedNPC.VirtualMachineAdapter = new VirtualMachineAdapter();
+                patchedNPC.VirtualMachineAdapter.Scripts.Insert(patchedNPC.VirtualMachineAdapter.Scripts.Count, theScriptEntrieGetter.DeepCopy());
             }
 
             // create script
@@ -60,7 +84,7 @@ namespace DeadBodyCleanupNPCAttacher
             foreach (var npcGetter in state.LoadOrder.PriorityOrder.Npc().WinningOverrides())
             {
                 // skip invalid
-                if (!playerFound && npcGetter.FormKey== playerFormkey)
+                if (!playerFound && npcGetter.FormKey == playerFormkey)
                 {
                     playerFound = true; // player check only while not found
                     continue;
@@ -69,7 +93,7 @@ namespace DeadBodyCleanupNPCAttacher
                 if (npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.IsCharGenFacePreset)) continue; // is chargen preset
                 if (npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Summonable)) continue; // is summonable
                 if (npcGetter.Template != null && !npcGetter.Template.IsNull && npcGetter.Configuration.TemplateFlags.HasFlag(NpcConfiguration.TemplateFlag.Script)) continue; // has template npc and use ithis script
-                if ((npcGetter.VirtualMachineAdapter?.Scripts.Select(s => s.Name == "WIDeadBodyCleanupScript").Any()).HasValue) continue; // already have the script
+                if (npcGetter.VirtualMachineAdapter != null && npcGetter.VirtualMachineAdapter.Scripts.Any(s => string.Equals(s.Name, "wideadbodycleanupscript", StringComparison.InvariantCultureIgnoreCase))) continue; // already have the script
 
                 var npc = state.PatchMod.Npcs.GetOrAddAsOverride(npcGetter);
                 Console.WriteLine($"Add script for npc '{npcGetter.FormKey.ID}'({npcGetter.EditorID}:[{npcGetter.Name}])");
