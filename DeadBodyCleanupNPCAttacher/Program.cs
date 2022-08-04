@@ -34,72 +34,43 @@ namespace DeadBodyCleanupNPCAttacher
                 Console.WriteLine($"{unofficialPatchName} not found. Finish.");
                 return;
             }
-
             var unofficialPatch1 = state.LoadOrder.TryGetValue(unofficialPatchModKey);
 
-            //var wiUPDeadBodyCleanupScript = state.LoadOrder.TryGetValue(unofficialPatchModKey);
-
             ModKey SkyrimModKey = ModKey.FromNameAndExtension("Skyrim.esm");
-            //0x012e46
-            //var armorFormlink = new FormLink<IArmorGetter>(SkyrimModKey.MakeFormKey(0x012e46));
-            var modGetter = state.LoadOrder.Items.First(i => i.Mod?.ModKey == SkyrimModKey);
-            var a = modGetter.Mod?.Armors.First(a => a.FormKey == SkyrimModKey.MakeFormKey(0x012e46));
-            Console.WriteLine("Armor name is '" + a?.Name + "' (" + a?.EditorID + ")");
 
+            // create script
             var deadBodyCleanupScript = new ScriptEntry
             {
                 Name = "WIDeadBodyCleanupScript",
                 Flags = ScriptEntry.Flag.Local
             };
-
             var deathContainerScriptProperty = new ScriptObjectProperty
             {
                 Name = "DeathContainer",
                 Flags = ScriptProperty.Flag.Edited,
                 Object = new FormLink<IContainerGetter>(SkyrimModKey.MakeFormKey(0x0172B6))
             };
-
             deadBodyCleanupScript.Properties.Add(deathContainerScriptProperty);
-
             var wiScriptProperty = new ScriptObjectProperty
             {
                 Name = "WI",
                 Flags = ScriptProperty.Flag.Edited,
                 Object = new FormLink<IQuestGetter>(SkyrimModKey.MakeFormKey(0x035d64))
             };
-
             deadBodyCleanupScript.Properties.Add(wiScriptProperty);
 
-            //StringBuilder sb = new StringBuilder();
             foreach (var npcGetter in state.LoadOrder.PriorityOrder.Npc().WinningOverrides())
             {
-                try
-                {
-                    //bool hasTheScript = (npcGetter.VirtualMachineAdapter?.Scripts.Select(s => s.Name == "WIDeadBodyCleanupScript").Any()).HasValue;
-                    //if (hasTheScript) continue;
+                // skip invalid
+                if (!npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Unique)) continue; // not unique
+                if (npcGetter.Template != null && !npcGetter.Template.IsNull && npcGetter.Configuration.TemplateFlags.HasFlag(NpcConfiguration.TemplateFlag.Script)) continue; // has template npc and use ithis script
+                if ((npcGetter.VirtualMachineAdapter?.Scripts.Select(s => s.Name == "WIDeadBodyCleanupScript").Any()).HasValue) continue; // already have the script
 
-                    // is excluded
-                    if (!npcGetter.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Unique) || (npcGetter.VirtualMachineAdapter?.Scripts.Select(s => s.Name == "WIDeadBodyCleanupScript").Any()).HasValue)
-                    {
-                        continue;
-                    }
+                var npc = state.PatchMod.Npcs.GetOrAddAsOverride(npcGetter);
+                Console.WriteLine($"Add script for npc '{npcGetter.FormKey.ID}'({npcGetter.EditorID}:[{npcGetter.Name}])");
 
-                    var npc = state.PatchMod.Npcs.GetOrAddAsOverride(npcGetter);
-
-                    var message = "Add script for npc '" + npcGetter.FormKey.ID + "'(" + npcGetter.EditorID + ":[" + npcGetter.Name + "])";
-                    Console.WriteLine(message);
-                    //sb.AppendLine(message);
-
-                    if (npc.VirtualMachineAdapter == null) npc.VirtualMachineAdapter = new VirtualMachineAdapter();
-
-                    npc.VirtualMachineAdapter.Scripts.Insert(npc.VirtualMachineAdapter.Scripts.Count, deadBodyCleanupScript);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("An error accured while parse npc '" + npcGetter.FormKey.ID + "'(" + npcGetter.EditorID + ":" + npcGetter.Name + ") Error:\r\n" + ex + "\r\n");
-                }
-
-                //File.WriteAllText("c:\\patcher.log.txt", sb.ToString());
+                if (npc.VirtualMachineAdapter == null) npc.VirtualMachineAdapter = new VirtualMachineAdapter();
+                npc.VirtualMachineAdapter.Scripts.Insert(npc.VirtualMachineAdapter.Scripts.Count, deadBodyCleanupScript);
             }
         }
     }
