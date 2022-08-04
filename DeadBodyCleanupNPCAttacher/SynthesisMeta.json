@@ -1,7 +1,7 @@
 {
   "Nickname": "DeadBodyCleanupNPCAttacher",
   "Visibility": "Visible",
-  "OneLineDescription": "",
+  "OneLineDescription": "Add deadbodycleanupscript to some npcs",
   "LongDescription": "",
   "PreferredAutoVersioning": "Default",
   "RequiredMods": [],
